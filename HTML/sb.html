@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photobooth 3 Foto</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 4px solid #ff6b6b;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #canvas {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            border: 4px solid #4ecdc4;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        button {
+            margin: 10px;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        #start {
+            background-color: #ff6b6b; /* Merah cerah */
+            color: white;
+        }
+        #start:hover {
+            background-color: #ff5252;
+            transform: scale(1.05);
+        }
+        #download {
+            background-color: #4ecdc4; /* Hijau kebiruan */
+            color: white;
+            display: none;
+        }
+        #download:hover {
+            background-color: #45b7aa;
+            transform: scale(1.05);
+        }
+        #countdown {
+            font-size: 2em;
+            color: #ffd93d; /* Kuning cerah */
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Photobooth faizal gabut</h1>
+    <video id="video" autoplay></video>
+    <br>
+    <button id="start">Mulai Photobooth</button>
+    <button id="download">Unduh Strip Foto</button>
+    <div id="countdown"></div>
+    <br>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('start');
+        const downloadBtn = document.getElementById('download');
+        const countdown = document.getElementById('countdown');
+        const ctx = canvas.getContext('2d');
+
+        let photos = [];
+        let photoIndex = 0;
+
+        
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing camera: ', err);
+                alert('Tidak dapat mengakses kamera. Pastikan izin diberikan.');
+            });
+
+        // Fungsi untuk mengambil foto
+        function takePhoto() {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCtx.drawImage(video, 0, 0);
+            photos.push(tempCanvas);
+        }
+
+        // Fungsi hitungan mundur
+        function startCountdown(seconds, callback) {
+            countdown.style.display = 'block';
+            countdown.textContent = seconds;
+            const interval = setInterval(() => {
+                seconds--;
+                countdown.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    countdown.style.display = 'none';
+                    callback();
+                }
+            }, 1000);
+        }
+
+        // Mulai photobooth
+        startBtn.addEventListener('click', () => {
+            photos = [];
+            photoIndex = 0;
+            canvas.style.display = 'none';
+            downloadBtn.style.display = 'none';
+
+            // Ambil foto pertama
+            startCountdown(3, () => {
+                takePhoto();
+                photoIndex++;
+
+                // Ambil foto kedua
+                startCountdown(3, () => {
+                    takePhoto();
+                    photoIndex++;
+
+                    // Ambil foto ketiga
+                    startCountdown(3, () => {
+                        takePhoto();
+                        photoIndex++;
+
+                        // Gabungkan 3 foto menjadi strip vertikal
+                        const photoWidth = photos[0].width;
+                        const photoHeight = photos[0].height;
+                        canvas.width = photoWidth;
+                        canvas.height = photoHeight * 3; // 3 foto vertikal
+
+                        for (let i = 0; i < 3; i++) {
+                            ctx.drawImage(photos[i], 0, i * photoHeight);
+                        }
+
+                        canvas.style.display = 'block';
+                        downloadBtn.style.display = 'inline';
+                    });
+                });
+            });
+        });
+
+        // Unduh strip foto
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'photobooth-strip.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
